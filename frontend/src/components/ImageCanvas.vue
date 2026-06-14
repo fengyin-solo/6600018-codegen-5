@@ -16,8 +16,8 @@
       <!-- Annotations -->
       <g v-for="a in store.currentDoc?.annotations || []" :key="a.id">
         <rect :x="a.bbox[0]" :y="a.bbox[1]" :width="a.bbox[2]" :height="a.bbox[3]"
-          fill="rgba(59,130,246,0.15)" stroke="#3b82f6" stroke-width="2" stroke-dasharray="5,5" />
-        <text :x="a.bbox[0]" :y="a.bbox[1] - 5" fill="#3b82f6" font-size="11">{{ a.label }}</text>
+          :fill="getAnnotationColor(a) + '26'" :stroke="getAnnotationColor(a)" stroke-width="2" stroke-dasharray="5,5" />
+        <text :x="a.bbox[0]" :y="a.bbox[1] - 5" :fill="getAnnotationColor(a)" font-size="11">{{ a.label }}</text>
       </g>
       <!-- Drag selection -->
       <rect v-if="dragging" :x="dragRect.x" :y="dragRect.y" :width="dragRect.w" :height="dragRect.h"
@@ -27,8 +27,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, computed } from 'vue'
 import { useOcrStore } from '../store/ocr'
+import type { Annotation } from '../types'
 
 const store = useOcrStore()
 const mockCanvas = ref<HTMLCanvasElement | null>(null)
@@ -36,6 +37,11 @@ const imgRef = ref<HTMLImageElement | null>(null)
 const dragging = ref(false)
 const dragStart = reactive({ x: 0, y: 0 })
 const dragRect = reactive({ x: 0, y: 0, w: 0, h: 0 })
+
+function getAnnotationColor(annotation: Annotation): string {
+  const template = store.templates.find(t => t.label === annotation.label)
+  return template?.color || '#3b82f6'
+}
 
 onMounted(() => {
   if (mockCanvas.value) {
@@ -90,8 +96,6 @@ function onDrag(e: MouseEvent) {
 function endDrag(e: MouseEvent) {
   if (!dragging.value || dragRect.w < 10 || dragRect.h < 10) { dragging.value = false; return }
   dragging.value = false
-  const label = prompt('标注标签（如：章节/段落/异体字）') || 'region'
-  const content = prompt('标注内容') || ''
-  store.addAnnotation('region', [dragRect.x, dragRect.y, dragRect.w, dragRect.h], label, content)
+  store.openTemplateSelector([dragRect.x, dragRect.y, dragRect.w, dragRect.h])
 }
 </script>

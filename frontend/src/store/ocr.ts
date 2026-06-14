@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import type { Document, OCRResult, Annotation } from '../types'
+import type { Document, OCRResult, Annotation, AnnotationTemplate } from '../types'
 
 export const useOcrStore = defineStore('ocr', () => {
   const documents = ref<Document[]>([])
@@ -8,6 +8,9 @@ export const useOcrStore = defineStore('ocr', () => {
   const isLoading = ref(false)
   const searchQuery = ref('')
   const searchResults = ref<OCRResult[]>([])
+  const templates = ref<AnnotationTemplate[]>([])
+  const showTemplateSelector = ref(false)
+  const pendingBbox = ref<[number, number, number, number] | null>(null)
 
   // Mock data
   const MOCK_DOC: Document = {
@@ -33,9 +36,69 @@ export const useOcrStore = defineStore('ocr', () => {
     '風': '风', '雲': '云', '龍': '龙', '車': '车', '萬': '万', '見': '见',
   }
 
+  const PRESET_TEMPLATES: AnnotationTemplate[] = [
+    { id: 't1', name: '章节', type: 'region', label: '章节', content: '', color: '#ef4444' },
+    { id: 't2', name: '人物', type: 'character', label: '人物', content: '', color: '#3b82f6' },
+    { id: 't3', name: '注释', type: 'note', label: '注释', content: '', color: '#10b981' },
+    { id: 't4', name: '异体字', type: 'character', label: '异体字', content: '', color: '#8b5cf6' },
+    { id: 't5', name: '段落', type: 'region', label: '段落', content: '', color: '#f59e0b' },
+    { id: 't6', name: '页眉', type: 'region', label: '页眉', content: '', color: '#ec4899' },
+    { id: 't7', name: '页脚', type: 'region', label: '页脚', content: '', color: '#06b6d4' },
+    { id: 't8', name: '校注', type: 'note', label: '校注', content: '', color: '#84cc16' },
+  ]
+
   function loadMockDocument() {
     documents.value = [MOCK_DOC]
     currentDoc.value = MOCK_DOC
+    if (templates.value.length === 0) {
+      templates.value = [...PRESET_TEMPLATES]
+    }
+  }
+
+  function initTemplates() {
+    if (templates.value.length === 0) {
+      templates.value = [...PRESET_TEMPLATES]
+    }
+  }
+
+  function addTemplate(template: Omit<AnnotationTemplate, 'id'>) {
+    templates.value.push({
+      ...template,
+      id: Date.now().toString()
+    })
+  }
+
+  function updateTemplate(id: string, updates: Partial<Omit<AnnotationTemplate, 'id'>>) {
+    const index = templates.value.findIndex(t => t.id === id)
+    if (index !== -1) {
+      templates.value[index] = { ...templates.value[index], ...updates }
+    }
+  }
+
+  function removeTemplate(id: string) {
+    templates.value = templates.value.filter(t => t.id !== id)
+  }
+
+  function openTemplateSelector(bbox: [number, number, number, number]) {
+    pendingBbox.value = bbox
+    showTemplateSelector.value = true
+  }
+
+  function closeTemplateSelector() {
+    showTemplateSelector.value = false
+    pendingBbox.value = null
+  }
+
+  function applyTemplate(template: AnnotationTemplate) {
+    if (!pendingBbox.value || !currentDoc.value) return
+    currentDoc.value.annotations.push({
+      id: Date.now().toString(),
+      type: template.type,
+      bbox: pendingBbox.value,
+      label: template.label,
+      content: template.content
+    })
+    closeTemplateSelector()
   }
 
   async function uploadAndOCR(file: File) {
@@ -56,6 +119,7 @@ export const useOcrStore = defineStore('ocr', () => {
         }
         documents.value.push(doc)
         currentDoc.value = doc
+        initTemplates()
       }
     } catch {
       // Use mock data as fallback
@@ -104,7 +168,10 @@ export const useOcrStore = defineStore('ocr', () => {
 
   return {
     documents, currentDoc, isLoading, searchQuery, searchResults,
+    templates, showTemplateSelector, pendingBbox,
     loadMockDocument, uploadAndOCR, addAnnotation, removeAnnotation,
-    convertVariant, searchInDocuments, exportTEI
+    convertVariant, searchInDocuments, exportTEI,
+    initTemplates, addTemplate, updateTemplate, removeTemplate,
+    openTemplateSelector, closeTemplateSelector, applyTemplate
   }
 })

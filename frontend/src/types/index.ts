@@ -28,3 +28,12 @@ export interface VariantChar {
   modern: string
   frequency: number
 }
+
+export interface AnnotationTemplate {
+  id: string
+  name: string
+  type: 'region' | 'character' | 'note'
+  label: string
+  content: string
+  color: string
+}

@@ -71,6 +71,8 @@
         </div>
       </div>
 
+      <TemplateManager />
+
       <h3 class="text-amber-300 font-bold text-sm mt-4">标注列表</h3>
       <div v-if="store.currentDoc" class="space-y-1">
         <div v-for="a in store.currentDoc.annotations" :key="a.id"
@@ -83,12 +85,16 @@
         </div>
       </div>
     </div>
+
+    <TemplateSelector />
   </div>
 </template>
 
 <script setup lang="ts">
 import { useOcrStore } from './store/ocr'
 import ImageCanvas from './components/ImageCanvas.vue'
+import TemplateSelector from './components/TemplateSelector.vue'
+import TemplateManager from './components/TemplateManager.vue'
 
 const store = useOcrStore()
 
