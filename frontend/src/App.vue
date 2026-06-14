@@ -66,7 +66,7 @@
           <div class="text-xs text-gray-400 mt-1">
             简体: {{ store.convertVariant(r.text) }}
           </div>
-          <input v-model="r.corrected" placeholder="人工校正..."
+          <input :value="r.corrected" @input="(e) => store.updateCorrected(r.id, (e.target as HTMLInputElement).value)" placeholder="人工校正..."
             class="w-full bg-gray-700 rounded px-2 py-1 text-xs mt-1" />
         </div>
       </div>

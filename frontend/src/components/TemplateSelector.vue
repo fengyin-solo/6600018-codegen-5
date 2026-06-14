@@ -79,13 +79,12 @@ function addCustom() {
     return
   }
   if (!store.pendingBbox || !store.currentDoc) return
-  store.currentDoc.annotations.push({
-    id: Date.now().toString(),
-    type: customType.value,
-    bbox: store.pendingBbox,
-    label: customLabel.value.trim(),
-    content: customContent.value.trim()
-  })
+  store.addAnnotation(
+    customType.value,
+    store.pendingBbox,
+    customLabel.value.trim(),
+    customContent.value.trim()
+  )
   customLabel.value = ''
   customContent.value = ''
   store.closeTemplateSelector()
